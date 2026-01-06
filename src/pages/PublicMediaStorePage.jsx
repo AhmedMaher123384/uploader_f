@@ -280,7 +280,7 @@ export function PublicMediaStorePage() {
               </div>
 
               <Link
-                to="/public-media"
+                to="/"
                 className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2.5 text-sm font-extrabold text-white"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

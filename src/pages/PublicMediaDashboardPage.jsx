@@ -112,7 +112,7 @@ function StoreCard({ store, compact = false }) {
 
   return (
     <Link
-      to={`/public-media/${encodeURIComponent(storeId)}`}
+      to={`/stores/${encodeURIComponent(storeId)}`}
       className={[
         'group block rounded-2xl border border-[#18b5d5]/25 bg-[#242424]',
         'focus:outline-none focus:ring-2 focus:ring-[#18b5d5]/30',
@@ -404,7 +404,7 @@ export function PublicMediaDashboardPage() {
                     value={(Number(overviewStats?.totalStores || 0) || 0).toLocaleString()}
                     hint="متاجر لديها ملفات مرفوعة"
                     tone="sky"
-                    to={lastUploader?.storeId ? `/public-media/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
+                    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
                   />
                   <MetricCard
                     label="إجمالي الملفات"
@@ -417,7 +417,7 @@ export function PublicMediaDashboardPage() {
                     value={formatDate(overviewStats?.lastAt || null)}
                     hint={lastUploader?.store?.name ? `آخر متجر رفع: ${String(lastUploader.store.name)}` : lastUploader?.storeId ? `آخر متجر رفع: ${String(lastUploader.storeId)}` : ''}
                     tone="amber"
-                    to={lastUploader?.storeId ? `/public-media/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
+                    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
                   />
                   <MetricCard
                     label="أول رفع"
@@ -431,7 +431,7 @@ export function PublicMediaDashboardPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#18b5d5]/15 px-5 py-4">
                     <div className="text-lg font-extrabold text-[#18b5d5]">آخر 10 إضافات</div>
                     <Link
-                      to="/public-media?view=stores&sort=lastAt_desc&page=1"
+                      to="/?view=stores&sort=lastAt_desc&page=1"
                       className="rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2 text-sm font-bold text-white"
                     >
                       عرض المتاجر
@@ -462,7 +462,7 @@ export function PublicMediaDashboardPage() {
                                 <td className="px-5 py-3">{formatDate(at)}</td>
                                 <td className="px-5 py-3">
                                   {storeId ? (
-                                    <Link className="font-bold text-white underline-offset-2 hover:underline" to={`/public-media/${encodeURIComponent(storeId)}`}>
+                                    <Link className="font-bold text-white underline-offset-2 hover:underline" to={`/stores/${encodeURIComponent(storeId)}`}>
                                       {a?.store?.name ? String(a.store.name) : storeId}
                                     </Link>
                                   ) : (
