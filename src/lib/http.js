@@ -12,7 +12,7 @@ const ENV_API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const API_BASE_URL =
   ENV_API_BASE_URL ||
   (import.meta.env.PROD && window.location.hostname.endsWith('netlify.app')
-    ? 'https://bundle-phi.vercel.app'
+    ? 'https://uploader-murex.vercel.app/'
     : window.location.origin)
 
 function safeJsonParse(text) {
