@@ -12,6 +12,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<PublicMediaDashboardPage />} />
+      <Route path="/stores" element={<PublicMediaDashboardPage />} />
       <Route path="/stores/:storeId" element={<PublicMediaStorePage />} />
 
       <Route path="/public-media" element={<Navigate to="/" replace />} />

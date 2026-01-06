@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loading } from '../components/ui/Loading.jsx'
 import { requestJson } from '../lib/http.js'
 
@@ -230,9 +230,12 @@ function SectionHeader({ title, subtitle, to, actionLabel }) {
 }
 
 export function PublicMediaDashboardPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const viewParam = String(searchParams.get('view') || '').trim()
-  const view = viewParam === 'stores' ? 'stores' : 'overview'
+  const isStoresPath = String(location?.pathname || '') === '/stores'
+  const view = isStoresPath ? 'stores' : viewParam === 'stores' ? 'stores' : 'overview'
 
   const qParam = String(searchParams.get('q') || '')
   const sortParam = String(searchParams.get('sort') || '').trim() || 'lastAt_desc'
@@ -266,15 +269,14 @@ export function PublicMediaDashboardPage() {
     const t = globalThis.setTimeout(() => {
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev)
-        if (view === 'stores') next.set('view', 'stores')
-        else next.delete('view')
+        next.delete('view')
         const nq = String(q || '').trim()
         if (nq) next.set('q', nq)
         else next.delete('q')
         const ns = String(sort || '').trim() || 'lastAt_desc'
         if (ns && ns !== 'lastAt_desc') next.set('sort', ns)
         else next.delete('sort')
-        if (view === 'stores') next.set('page', String(page))
+        if (view === 'stores' && page > 1) next.set('page', String(page))
         else next.delete('page')
         if (prev.toString() === next.toString()) return prev
         return next
@@ -282,6 +284,19 @@ export function PublicMediaDashboardPage() {
     }, 150)
     return () => globalThis.clearTimeout(t)
   }, [page, q, setSearchParams, sort, view])
+
+  useEffect(() => {
+    const path = String(location?.pathname || '')
+    const shouldBe = view === 'stores' ? '/stores' : '/'
+    if (path === shouldBe) return
+    if (path !== '/' && path !== '/stores') return
+    const nextSearch = new URLSearchParams(searchParams)
+    nextSearch.delete('view')
+    const np = Math.max(1, Number(nextSearch.get('page') || 1) || 1)
+    if (np <= 1) nextSearch.delete('page')
+    const canonical = nextSearch.toString()
+    navigate({ pathname: shouldBe, search: canonical ? `?${canonical}` : '' }, { replace: true })
+  }, [location?.pathname, navigate, searchParams, view])
 
   useEffect(() => {
     if (view !== 'stores') return undefined
@@ -349,12 +364,7 @@ export function PublicMediaDashboardPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setSearchParams((prev) => {
-                    const next = new URLSearchParams(prev)
-                    next.delete('view')
-                    next.delete('page')
-                    return next
-                  })
+                  navigate({ pathname: '/', search: '' })
                 }}
                 className={[
                   'rounded-xl px-4 py-2 text-sm font-extrabold',
@@ -366,12 +376,7 @@ export function PublicMediaDashboardPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setSearchParams((prev) => {
-                    const next = new URLSearchParams(prev)
-                    next.set('view', 'stores')
-                    if (!next.get('page')) next.set('page', '1')
-                    return next
-                  })
+                  navigate({ pathname: '/stores', search: String(searchParams || '') ? `?${searchParams.toString()}` : '' })
                 }}
                 className={[
                   'rounded-xl px-4 py-2 text-sm font-extrabold',
@@ -433,7 +438,7 @@ export function PublicMediaDashboardPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#18b5d5]/15 px-5 py-4">
                     <div className="text-lg font-extrabold text-[#18b5d5]">آخر 10 إضافات</div>
                     <Link
-                      to="/?view=stores"
+                      to="/stores"
                       className="rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2 text-sm font-bold text-white"
                     >
                       عرض المتاجر

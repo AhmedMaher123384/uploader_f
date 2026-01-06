@@ -334,7 +334,7 @@ export function PublicMediaStorePage() {
 
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <Link
-                  to="/?view=stores"
+                  to="/stores"
                   className="inline-flex items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2.5 text-sm font-extrabold text-white"
                 >
                   المتاجر
