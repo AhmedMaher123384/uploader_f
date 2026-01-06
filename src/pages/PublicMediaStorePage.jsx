@@ -146,26 +146,26 @@ function MediaCard({ item, canDelete, deleting, breaking, onRequestDelete, onReq
           )}
         </div>
 
-        {canDelete ? (
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={!id || deleting || breaking}
-              onClick={() => onRequestBreak?.({ id, publicId })}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5 text-[11px] font-extrabold text-amber-100 disabled:opacity-40"
-            >
-              {breaking ? 'جاري تعطيل الرابط...' : 'تعطيل الرابط'}
-            </button>
-            <button
-              type="button"
-              disabled={!id || deleting || breaking}
-              onClick={() => onRequestDelete?.({ id, publicId })}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-[11px] font-extrabold text-rose-200 disabled:opacity-40"
-            >
-              {deleting ? 'جاري الحذف...' : 'حذف نهائي'}
-            </button>
-          </div>
-        ) : null}
+        <div className={['grid grid-cols-2 gap-2', canDelete ? '' : 'opacity-70'].join(' ')}>
+          <button
+            type="button"
+            disabled={!id || deleting || breaking || !canDelete}
+            onClick={() => onRequestBreak?.({ id, publicId })}
+            title={canDelete ? '' : 'يلزم مفتاح الإدارة لتفعيل هذا الإجراء'}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5 text-[11px] font-extrabold text-amber-100 disabled:opacity-40"
+          >
+            {breaking ? 'جاري تعطيل الرابط...' : canDelete ? 'تعطيل الرابط' : 'تعطيل الرابط (غير مفعّل)'}
+          </button>
+          <button
+            type="button"
+            disabled={!id || deleting || breaking || !canDelete}
+            onClick={() => onRequestDelete?.({ id, publicId })}
+            title={canDelete ? '' : 'يلزم مفتاح الإدارة لتفعيل هذا الإجراء'}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-[11px] font-extrabold text-rose-200 disabled:opacity-40"
+          >
+            {deleting ? 'جاري الحذف...' : canDelete ? 'حذف نهائي' : 'حذف نهائي (غير مفعّل)'}
+          </button>
+        </div>
       </div>
     </div>
   )
