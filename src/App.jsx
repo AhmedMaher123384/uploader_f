@@ -1,0 +1,54 @@
+import { Navigate, Route, BrowserRouter, Routes } from 'react-router-dom'
+import { AuthProvider } from './auth/AuthProvider.jsx'
+import { useAuth } from './auth/useAuth.js'
+import { ToastProvider } from './components/ToastProvider.jsx'
+import { AppLayout } from './components/layout/AppLayout.jsx'
+import { LoginPage } from './pages/LoginPage.jsx'
+import { DashboardPage } from './pages/DashboardPage.jsx'
+import { ProductsPage } from './pages/ProductsPage.jsx'
+import { MediaPlatformPage } from './pages/MediaPlatformPage.jsx'
+import { PublicMediaDashboardPage } from './pages/PublicMediaDashboardPage.jsx'
+import { PublicMediaStorePage } from './pages/PublicMediaStorePage.jsx'
+
+function Protected({ children }) {
+  const { token } = useAuth()
+  if (!token) return <Navigate to="/login" replace />
+  return children
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/public-media" element={<PublicMediaDashboardPage />} />
+      <Route path="/public-media/:storeId" element={<PublicMediaStorePage />} />
+
+      <Route
+        path="/"
+        element={
+          <Protected>
+            <AppLayout />
+          </Protected>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="products" element={<ProductsPage />} />
+        <Route path="media-platform" element={<MediaPlatformPage />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <ToastProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ToastProvider>
+    </BrowserRouter>
+  )
+}
