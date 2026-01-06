@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx'
 import { Loading } from '../components/ui/Loading.jsx'
+import { useToasts } from '../components/useToasts.js'
 import { requestJson } from '../lib/http.js'
 
 function formatBytes(n) {
@@ -69,10 +71,12 @@ function StoreLogo({ name, logoUrl }) {
   )
 }
 
-function MediaCard({ item }) {
+function MediaCard({ item, canDelete, deleting, onRequestDelete }) {
   const isVideo = String(item?.resourceType) === 'video'
   const src = item?.secureUrl || item?.url || null
   const typeClasses = 'bg-transparent text-white border-[#18b5d5]/25'
+  const id = String(item?.id || '')
+  const publicId = String(item?.publicId || '')
 
   return (
     <div className="overflow-hidden rounded-xl border border-[#18b5d5]/25 bg-[#292929]">
@@ -141,6 +145,20 @@ function MediaCard({ item }) {
             </div>
           )}
         </div>
+
+        {canDelete ? (
+          <button
+            type="button"
+            disabled={!id || deleting}
+            onClick={() => onRequestDelete?.({ id, publicId })}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-xs font-extrabold text-rose-200 disabled:opacity-40"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14" />
+            </svg>
+            {deleting ? 'جاري الحذف...' : 'حذف من Cloudinary'}
+          </button>
+        ) : null}
       </div>
     </div>
   )
@@ -149,6 +167,7 @@ function MediaCard({ item }) {
 export function PublicMediaStorePage() {
   const { storeId: rawStoreId } = useParams()
   const storeId = String(rawStoreId || '').trim()
+  const toasts = useToasts()
 
   const [searchParams, setSearchParams] = useSearchParams()
   const rtParam = String(searchParams.get('type') || '')
@@ -162,6 +181,14 @@ export function PublicMediaStorePage() {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState({ total: 0, items: [], store: null, summary: null })
   const [error, setError] = useState('')
+  const [refresh, setRefresh] = useState(0)
+
+  const mediaAdminKey = String(import.meta.env.VITE_MEDIA_ADMIN_KEY || '').trim()
+  const canDelete = Boolean(mediaAdminKey)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmTarget, setConfirmTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deletingId, setDeletingId] = useState('')
 
   useEffect(() => setResourceType(rtParam), [rtParam])
   useEffect(() => setQ(qParam), [qParam])
@@ -180,7 +207,10 @@ export function PublicMediaStorePage() {
         if (nq) next.set('q', nq)
         else next.delete('q')
 
-        next.set('page', String(page))
+        if (page > 1) next.set('page', String(page))
+        else next.delete('page')
+
+        if (prev.toString() === next.toString()) return prev
         return next
       })
     }, 150)
@@ -214,7 +244,30 @@ export function PublicMediaStorePage() {
     }
     run()
     return () => controller.abort()
-  }, [limit, page, q, resourceType, storeId])
+  }, [limit, page, q, refresh, resourceType, storeId])
+
+  async function deleteAssetById(assetId) {
+    if (!assetId) return
+    if (!canDelete) {
+      toasts.error('ميزة الحذف غير مفعّلة على هذا الداشبورد.', 'غير متاح')
+      return
+    }
+    setDeletingId(String(assetId))
+    setDeleting(true)
+    try {
+      await requestJson(`/api/public/media/assets/${encodeURIComponent(String(assetId))}`, {
+        method: 'DELETE',
+        headers: { 'x-media-admin-key': mediaAdminKey },
+      })
+      toasts.success('تم حذف الملف بنجاح.', 'تم')
+      setRefresh((x) => x + 1)
+    } catch (e) {
+      toasts.error(String(e?.message || 'فشل حذف الملف.'), 'خطأ')
+    } finally {
+      setDeleting(false)
+      setDeletingId('')
+    }
+  }
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil((Number(data.total || 0) || 0) / limit)), [data.total, limit])
   const items = Array.isArray(data.items) ? data.items : []
@@ -279,15 +332,23 @@ export function PublicMediaStorePage() {
                 </div>
               </div>
 
-              <Link
-                to="/"
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2.5 text-sm font-extrabold text-white"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                رجوع
-              </Link>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Link
+                  to="/?view=stores"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2.5 text-sm font-extrabold text-white"
+                >
+                  المتاجر
+                </Link>
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2.5 text-sm font-extrabold text-white"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  رجوع
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -432,6 +493,26 @@ export function PublicMediaStorePage() {
         </div>
 
         <div className="mt-6">
+          <ConfirmDialog
+            open={confirmOpen}
+            title="تأكيد الحذف"
+            message={`هل أنت متأكد أنك تريد حذف هذا الملف من Cloudinary؟${confirmTarget?.publicId ? ` (${String(confirmTarget.publicId)})` : ''}`}
+            confirmText="حذف"
+            cancelText="إلغاء"
+            onCancel={() => {
+              if (deleting) return
+              setConfirmOpen(false)
+              setConfirmTarget(null)
+            }}
+            onConfirm={async () => {
+              if (deleting) return
+              const id = String(confirmTarget?.id || '').trim()
+              setConfirmOpen(false)
+              setConfirmTarget(null)
+              await deleteAssetById(id)
+            }}
+          />
+
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loading label="جاري تحميل الملفات..." />
@@ -451,7 +532,17 @@ export function PublicMediaStorePage() {
             items.length ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((it) => (
-                  <MediaCard key={String(it?.id)} item={it} />
+                  <MediaCard
+                    key={String(it?.id)}
+                    item={it}
+                    canDelete={canDelete}
+                    deleting={deleting && String(deletingId || '') === String(it?.id || '')}
+                    onRequestDelete={(target) => {
+                      if (deleting) return
+                      setConfirmTarget(target)
+                      setConfirmOpen(true)
+                    }}
+                  />
                 ))}
               </div>
             ) : (

@@ -266,7 +266,8 @@ export function PublicMediaDashboardPage() {
     const t = globalThis.setTimeout(() => {
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev)
-        next.set('view', view)
+        if (view === 'stores') next.set('view', 'stores')
+        else next.delete('view')
         const nq = String(q || '').trim()
         if (nq) next.set('q', nq)
         else next.delete('q')
@@ -275,6 +276,7 @@ export function PublicMediaDashboardPage() {
         else next.delete('sort')
         if (view === 'stores') next.set('page', String(page))
         else next.delete('page')
+        if (prev.toString() === next.toString()) return prev
         return next
       })
     }, 150)
@@ -349,7 +351,7 @@ export function PublicMediaDashboardPage() {
                 onClick={() => {
                   setSearchParams((prev) => {
                     const next = new URLSearchParams(prev)
-                    next.set('view', 'overview')
+                    next.delete('view')
                     next.delete('page')
                     return next
                   })
@@ -431,7 +433,7 @@ export function PublicMediaDashboardPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#18b5d5]/15 px-5 py-4">
                     <div className="text-lg font-extrabold text-[#18b5d5]">آخر 10 إضافات</div>
                     <Link
-                      to="/?view=stores&sort=lastAt_desc&page=1"
+                      to="/?view=stores"
                       className="rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2 text-sm font-bold text-white"
                     >
                       عرض المتاجر
