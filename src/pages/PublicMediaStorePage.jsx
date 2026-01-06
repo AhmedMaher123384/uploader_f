@@ -71,7 +71,7 @@ function StoreLogo({ name, logoUrl }) {
   )
 }
 
-function MediaCard({ item, canDelete, deleting, onRequestDelete }) {
+function MediaCard({ item, canDelete, deleting, breaking, onRequestDelete, onRequestBreak }) {
   const isVideo = String(item?.resourceType) === 'video'
   const src = item?.secureUrl || item?.url || null
   const typeClasses = 'bg-transparent text-white border-[#18b5d5]/25'
@@ -80,7 +80,7 @@ function MediaCard({ item, canDelete, deleting, onRequestDelete }) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-[#18b5d5]/25 bg-[#292929]">
-      <div className="aspect-video w-full bg-[#292929]">
+      <div className="h-28 w-full bg-[#292929] sm:h-32">
         {src ? (
           isVideo ? (
             <video className="h-full w-full object-cover" controls preload="metadata" playsInline src={src} />
@@ -147,17 +147,24 @@ function MediaCard({ item, canDelete, deleting, onRequestDelete }) {
         </div>
 
         {canDelete ? (
-          <button
-            type="button"
-            disabled={!id || deleting}
-            onClick={() => onRequestDelete?.({ id, publicId })}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-xs font-extrabold text-rose-200 disabled:opacity-40"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14" />
-            </svg>
-            {deleting ? 'جاري الحذف...' : 'حذف من Cloudinary'}
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={!id || deleting || breaking}
+              onClick={() => onRequestBreak?.({ id, publicId })}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5 text-[11px] font-extrabold text-amber-100 disabled:opacity-40"
+            >
+              {breaking ? 'جاري تعطيل الرابط...' : 'تعطيل الرابط'}
+            </button>
+            <button
+              type="button"
+              disabled={!id || deleting || breaking}
+              onClick={() => onRequestDelete?.({ id, publicId })}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-[11px] font-extrabold text-rose-200 disabled:opacity-40"
+            >
+              {deleting ? 'جاري الحذف...' : 'حذف نهائي'}
+            </button>
+          </div>
         ) : null}
       </div>
     </div>
@@ -186,9 +193,12 @@ export function PublicMediaStorePage() {
   const mediaAdminKey = String(import.meta.env.VITE_MEDIA_ADMIN_KEY || '').trim()
   const canDelete = Boolean(mediaAdminKey)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmMode, setConfirmMode] = useState('delete')
   const [confirmTarget, setConfirmTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
+  const [breaking, setBreaking] = useState(false)
+  const [breakingId, setBreakingId] = useState('')
 
   useEffect(() => setResourceType(rtParam), [rtParam])
   useEffect(() => setQ(qParam), [qParam])
@@ -266,6 +276,29 @@ export function PublicMediaStorePage() {
     } finally {
       setDeleting(false)
       setDeletingId('')
+    }
+  }
+
+  async function breakAssetLinkById(assetId) {
+    if (!assetId) return
+    if (!canDelete) {
+      toasts.error('ميزة تعطيل الرابط غير مفعّلة على هذا الداشبورد.', 'غير متاح')
+      return
+    }
+    setBreakingId(String(assetId))
+    setBreaking(true)
+    try {
+      await requestJson(`/api/public/media/assets/${encodeURIComponent(String(assetId))}/break-link`, {
+        method: 'POST',
+        headers: { 'x-media-admin-key': mediaAdminKey },
+      })
+      toasts.success('تم تعطيل الرابط (اللينك القديم اتكسر).', 'تم')
+      setRefresh((x) => x + 1)
+    } catch (e) {
+      toasts.error(String(e?.message || 'فشل تعطيل الرابط.'), 'خطأ')
+    } finally {
+      setBreaking(false)
+      setBreakingId('')
     }
   }
 
@@ -495,21 +528,27 @@ export function PublicMediaStorePage() {
         <div className="mt-6">
           <ConfirmDialog
             open={confirmOpen}
-            title="تأكيد الحذف"
-            message={`هل أنت متأكد أنك تريد حذف هذا الملف من Cloudinary؟${confirmTarget?.publicId ? ` (${String(confirmTarget.publicId)})` : ''}`}
-            confirmText="حذف"
+            title={confirmMode === 'break' ? 'تأكيد تعطيل الرابط' : 'تأكيد الحذف'}
+            message={
+              confirmMode === 'break'
+                ? `هل تريد تعطيل رابط هذا الملف؟ (اللينك القديم هيتكسر)${confirmTarget?.publicId ? ` (${String(confirmTarget.publicId)})` : ''}`
+                : `هل أنت متأكد أنك تريد حذف هذا الملف من Cloudinary؟${confirmTarget?.publicId ? ` (${String(confirmTarget.publicId)})` : ''}`
+            }
+            confirmText={confirmMode === 'break' ? 'تعطيل' : 'حذف'}
             cancelText="إلغاء"
             onCancel={() => {
-              if (deleting) return
+              if (deleting || breaking) return
               setConfirmOpen(false)
               setConfirmTarget(null)
             }}
             onConfirm={async () => {
-              if (deleting) return
+              if (deleting || breaking) return
               const id = String(confirmTarget?.id || '').trim()
+              const mode = String(confirmMode)
               setConfirmOpen(false)
               setConfirmTarget(null)
-              await deleteAssetById(id)
+              if (mode === 'break') await breakAssetLinkById(id)
+              else await deleteAssetById(id)
             }}
           />
 
@@ -530,15 +569,23 @@ export function PublicMediaStorePage() {
 
           {!loading && !error ? (
             items.length ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {items.map((it) => (
                   <MediaCard
                     key={String(it?.id)}
                     item={it}
                     canDelete={canDelete}
                     deleting={deleting && String(deletingId || '') === String(it?.id || '')}
+                    breaking={breaking && String(breakingId || '') === String(it?.id || '')}
+                    onRequestBreak={(target) => {
+                      if (deleting || breaking) return
+                      setConfirmMode('break')
+                      setConfirmTarget(target)
+                      setConfirmOpen(true)
+                    }}
                     onRequestDelete={(target) => {
-                      if (deleting) return
+                      if (deleting || breaking) return
+                      setConfirmMode('delete')
                       setConfirmTarget(target)
                       setConfirmOpen(true)
                     }}
