@@ -146,26 +146,7 @@ function MediaCard({ item, canDelete, deleting, breaking, onRequestDelete, onReq
           )}
         </div>
 
-        <div className={['grid grid-cols-2 gap-2', canDelete ? '' : 'opacity-70'].join(' ')}>
-          <button
-            type="button"
-            disabled={!id || deleting || breaking || !canDelete}
-            onClick={() => onRequestBreak?.({ id, publicId })}
-            title={canDelete ? '' : 'يلزم مفتاح الإدارة لتفعيل هذا الإجراء'}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5 text-[11px] font-extrabold text-amber-100 disabled:opacity-40"
-          >
-            {breaking ? 'جاري تعطيل الرابط...' : canDelete ? 'تعطيل الرابط' : 'تعطيل الرابط (غير مفعّل)'}
-          </button>
-          <button
-            type="button"
-            disabled={!id || deleting || breaking || !canDelete}
-            onClick={() => onRequestDelete?.({ id, publicId })}
-            title={canDelete ? '' : 'يلزم مفتاح الإدارة لتفعيل هذا الإجراء'}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-[11px] font-extrabold text-rose-200 disabled:opacity-40"
-          >
-            {deleting ? 'جاري الحذف...' : canDelete ? 'حذف نهائي' : 'حذف نهائي (غير مفعّل)'}
-          </button>
-        </div>
+    
       </div>
     </div>
   )
@@ -279,28 +260,7 @@ export function PublicMediaStorePage() {
     }
   }
 
-  async function breakAssetLinkById(assetId) {
-    if (!assetId) return
-    if (!canDelete) {
-      toasts.error('ميزة تعطيل الرابط غير مفعّلة على هذا الداشبورد.', 'غير متاح')
-      return
-    }
-    setBreakingId(String(assetId))
-    setBreaking(true)
-    try {
-      await requestJson(`/api/public/media/assets/${encodeURIComponent(String(assetId))}/break-link`, {
-        method: 'POST',
-        headers: { 'x-media-admin-key': mediaAdminKey },
-      })
-      toasts.success('تم تعطيل الرابط (اللينك القديم اتكسر).', 'تم')
-      setRefresh((x) => x + 1)
-    } catch (e) {
-      toasts.error(String(e?.message || 'فشل تعطيل الرابط.'), 'خطأ')
-    } finally {
-      setBreaking(false)
-      setBreakingId('')
-    }
-  }
+  
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil((Number(data.total || 0) || 0) / limit)), [data.total, limit])
   const items = Array.isArray(data.items) ? data.items : []
