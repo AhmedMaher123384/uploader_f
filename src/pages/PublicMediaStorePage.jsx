@@ -428,7 +428,7 @@ export function PublicMediaStorePage() {
                 value={q}
                 onChange={(e) => {
                   setQ(e.target.value)
-                  setPage(1)
+                  setPage(1) 
                 }}
                 placeholder="ابحث باسم الملف أو Public ID..."
                 className="flex-1 bg-transparent text-sm font-bold text-white placeholder:text-white placeholder:opacity-70 outline-none"
