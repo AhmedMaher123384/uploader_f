@@ -353,9 +353,6 @@ export function PublicMediaDashboardPage() {
         <div className="rounded-3xl border border-[#18b5d5]/25 bg-[#242424] p-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 text-right">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#18b5d5]/25 bg-[#292929] px-3 py-1 text-xs font-bold text-[#18b5d5]">
-                Public <span className="opacity-70">•</span> Media
-              </div>
               <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-[#18b5d5] sm:text-4xl">منصة الرفع</h1>
               <p className="mt-2 text-sm text-white opacity-90">إدارة الميديا حسب المتجر — لوحة رسمية، سريعة، ومنظمة.</p>
             </div>
