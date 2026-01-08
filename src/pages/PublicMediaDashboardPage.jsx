@@ -402,34 +402,46 @@ export function PublicMediaDashboardPage() {
 
             {!overviewLoading && !overviewError ? (
               <div className="space-y-8">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <MetricCard
-                    label="إجمالي المتاجر"
-                    value={(Number(overviewStats?.totalStores || 0) || 0).toLocaleString()}
-                    hint="متاجر لديها ملفات مرفوعة"
-                    tone="sky"
-                    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
-                  />
-                  <MetricCard
-                    label="إجمالي الملفات"
-                    value={(Number(overviewStats?.totalAssets || 0) || 0).toLocaleString()}
-                    hint="كل الصور/الفيديو/الملفات"
-                    tone="emerald"
-                  />
-                  <MetricCard
-                    label="آخر رفع"
-                    value={formatDate(overviewStats?.lastAt || null)}
-                    hint={lastUploader?.store?.name ? `آخر متجر رفع: ${String(lastUploader.store.name)}` : lastUploader?.storeId ? `آخر متجر رفع: ${String(lastUploader.storeId)}` : ''}
-                    tone="amber"
-                    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
-                  />
-                  <MetricCard
-                    label="أول رفع"
-                    value={formatDay(overviewStats?.firstAt || null)}
-                    hint="بداية نشاط المنصة"
-                    tone="violet"
-                  />
-                </div>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 p-4">
+  <MetricCard
+    label="إجمالي المتاجر"
+    value={(Number(overviewStats?.totalStores || 0) || 0).toLocaleString()}
+    hint="متاجر لديها ملفات مرفوعة"
+    tone="sky"
+    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
+    className="shadow-lg rounded-xl"
+  />
+
+  <MetricCard
+    label="إجمالي الملفات"
+    value={(Number(overviewStats?.totalAssets || 0) || 0).toLocaleString()}
+    hint="كل الصور/الفيديو/الملفات"
+    tone="emerald"
+    className="shadow-lg rounded-xl"
+  />
+
+  <MetricCard
+    label="آخر رفع"
+    value={formatDate(overviewStats?.lastAt || null)}
+    hint={lastUploader?.store?.name 
+      ? `آخر متجر رفع: ${String(lastUploader.store.name)}` 
+      : lastUploader?.storeId 
+        ? `آخر متجر رفع: ${String(lastUploader.storeId)}` 
+        : ''}
+    tone="amber"
+    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
+    className="shadow-lg rounded-xl"
+  />
+
+  <MetricCard
+    label="أول رفع"
+    value={formatDay(overviewStats?.firstAt || null)}
+    hint="بداية نشاط المنصة"
+    tone="violet"
+    className="shadow-lg rounded-xl"
+  />
+</div>
+
 
                 <div className="rounded-2xl border border-[#18b5d5]/25 bg-[#242424]">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#18b5d5]/15 px-5 py-4">
