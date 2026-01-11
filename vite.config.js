@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://bundle-phi.vercel.app/',
+        target: 'https://uploader-murex.vercel.app/',
         changeOrigin: true,
       },
     },

@@ -75,8 +75,6 @@ function MediaCard({ item, canDelete, deleting, breaking, onRequestDelete, onReq
   const isVideo = String(item?.resourceType) === 'video'
   const src = item?.secureUrl || item?.url || null
   const typeClasses = 'bg-transparent text-white border-[#18b5d5]/25'
-  const id = String(item?.id || '')
-  const publicId = String(item?.publicId || '')
 
   return (
     <div className="overflow-hidden rounded-xl border border-[#18b5d5]/25 bg-[#292929]">
@@ -146,7 +144,26 @@ function MediaCard({ item, canDelete, deleting, breaking, onRequestDelete, onReq
           )}
         </div>
 
-    
+        {canDelete ? (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={deleting || breaking}
+              onClick={() => onRequestBreak && onRequestBreak(item)}
+              className="rounded-lg border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
+            >
+              {breaking ? 'جاري التعطيل...' : 'تعطيل الرابط'}
+            </button>
+            <button
+              type="button"
+              disabled={deleting || breaking}
+              onClick={() => onRequestDelete && onRequestDelete(item)}
+              className="rounded-lg bg-[#ef4444] px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
+            >
+              {deleting ? 'جاري الحذف...' : 'حذف'}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -260,7 +277,21 @@ export function PublicMediaStorePage() {
     }
   }
 
-  
+  async function breakAssetLinkById(assetId) {
+    if (!assetId) return
+    if (!canDelete) {
+      toasts.error('ميزة تعطيل الرابط غير مفعّلة على هذا الداشبورد.', 'غير متاح')
+      return
+    }
+    setBreakingId(String(assetId))
+    setBreaking(true)
+    try {
+      toasts.error('ميزة تعطيل الرابط غير متاحة حاليًا.', 'غير مدعوم')
+    } finally {
+      setBreaking(false)
+      setBreakingId('')
+    }
+  }
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil((Number(data.total || 0) || 0) / limit)), [data.total, limit])
   const items = Array.isArray(data.items) ? data.items : []

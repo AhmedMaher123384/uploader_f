@@ -353,6 +353,9 @@ export function PublicMediaDashboardPage() {
         <div className="rounded-3xl border border-[#18b5d5]/25 bg-[#242424] p-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 text-right">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#18b5d5]/25 bg-[#292929] px-3 py-1 text-xs font-bold text-[#18b5d5]">
+                 <span className="opacity-70">•</span> Media
+              </div>
               <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-[#18b5d5] sm:text-4xl">منصة الرفع</h1>
               <p className="mt-2 text-sm text-white opacity-90">إدارة الميديا حسب المتجر — لوحة رسمية، سريعة، ومنظمة.</p>
             </div>
@@ -402,46 +405,34 @@ export function PublicMediaDashboardPage() {
 
             {!overviewLoading && !overviewError ? (
               <div className="space-y-8">
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 p-4">
-  <MetricCard
-    label="إجمالي المتاجر"
-    value={(Number(overviewStats?.totalStores || 0) || 0).toLocaleString()}
-    hint="متاجر لديها ملفات مرفوعة"
-    tone="sky"
-    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
-    className="shadow-lg rounded-xl"
-  />
-
-  <MetricCard
-    label="إجمالي الملفات"
-    value={(Number(overviewStats?.totalAssets || 0) || 0).toLocaleString()}
-    hint="كل الصور/الفيديو/الملفات"
-    tone="emerald"
-    className="shadow-lg rounded-xl"
-  />
-
-  <MetricCard
-    label="آخر رفع"
-    value={formatDate(overviewStats?.lastAt || null)}
-    hint={lastUploader?.store?.name 
-      ? `آخر متجر رفع: ${String(lastUploader.store.name)}` 
-      : lastUploader?.storeId 
-        ? `آخر متجر رفع: ${String(lastUploader.storeId)}` 
-        : ''}
-    tone="amber"
-    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
-    className="shadow-lg rounded-xl"
-  />
-
-  <MetricCard
-    label="أول رفع"
-    value={formatDay(overviewStats?.firstAt || null)}
-    hint="بداية نشاط المنصة"
-    tone="violet"
-    className="shadow-lg rounded-xl"
-  />
-</div>
-
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <MetricCard
+                    label="إجمالي المتاجر"
+                    value={(Number(overviewStats?.totalStores || 0) || 0).toLocaleString()}
+                    hint="متاجر لديها ملفات مرفوعة"
+                    tone="sky"
+                    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
+                  />
+                  <MetricCard
+                    label="إجمالي الملفات"
+                    value={(Number(overviewStats?.totalAssets || 0) || 0).toLocaleString()}
+                    hint="كل الصور/الفيديو/الملفات"
+                    tone="emerald"
+                  />
+                  <MetricCard
+                    label="آخر رفع"
+                    value={formatDate(overviewStats?.lastAt || null)}
+                    hint={lastUploader?.store?.name ? `آخر متجر رفع: ${String(lastUploader.store.name)}` : lastUploader?.storeId ? `آخر متجر رفع: ${String(lastUploader.storeId)}` : ''}
+                    tone="amber"
+                    to={lastUploader?.storeId ? `/stores/${encodeURIComponent(String(lastUploader.storeId))}` : undefined}
+                  />
+                  <MetricCard
+                    label="أول رفع"
+                    value={formatDay(overviewStats?.firstAt || null)}
+                    hint="بداية نشاط المنصة"
+                    tone="violet"
+                  />
+                </div>
 
                 <div className="rounded-2xl border border-[#18b5d5]/25 bg-[#242424]">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#18b5d5]/15 px-5 py-4">
