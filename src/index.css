@@ -10,4 +10,5 @@ body,
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+  font-family: 'PingARLT++', 'PingARLT ++', 'PingARLT', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
 }
