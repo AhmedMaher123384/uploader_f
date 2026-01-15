@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx'
 import { Loading } from '../components/ui/Loading.jsx'
 import { useToasts } from '../components/useToasts.js'
-import { requestJson } from '../lib/http.js'
+import { requestBlob, requestJson } from '../lib/http.js'
 
 function formatBytes(n) {
   const b = Number(n)
@@ -71,8 +71,54 @@ function StoreLogo({ name, logoUrl }) {
   )
 }
 
-function MediaCard({ item, canDelete, deleting, breaking, onRequestDelete, onRequestBreak }) {
-  const isVideo = String(item?.resourceType) === 'video'
+const mediaBlobUrlCache = new Map()
+
+function AdminMediaImage({ assetId, fallbackSrc, adminKey }) {
+  const id = String(assetId || '').trim()
+  const key = String(adminKey || '').trim()
+  const fallback = String(fallbackSrc || '')
+
+  const [blobUrl, setBlobUrl] = useState(() => {
+    if (id && mediaBlobUrlCache.has(id)) return mediaBlobUrlCache.get(id)
+    return ''
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    if (!id || !key) return () => {}
+
+    if (mediaBlobUrlCache.has(id)) {
+      return () => {}
+    }
+
+    const controller = new AbortController()
+    ;(async () => {
+      try {
+        const blob = await requestBlob(`/api/public/media/assets/${encodeURIComponent(id)}/blob`, {
+          headers: { 'x-media-admin-key': key },
+          signal: controller.signal,
+        })
+        const objUrl = URL.createObjectURL(blob)
+        mediaBlobUrlCache.set(id, objUrl)
+        if (!cancelled) setBlobUrl(objUrl)
+      } catch {
+        void 0
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [id, key])
+
+  return <img className="h-full w-full object-cover" alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" src={blobUrl || fallback} />
+}
+
+function MediaCard({ item, canDelete, deleting, breaking, mediaAdminKey, onRequestDelete, onRequestBreak }) {
+  const rt = String(item?.resourceType || '')
+  const isVideo = rt === 'video'
+  const isImage = rt === 'image'
   const src = item?.secureUrl || item?.url || null
   const typeClasses = 'bg-transparent text-white border-[#18b5d5]/25'
 
@@ -83,7 +129,20 @@ function MediaCard({ item, canDelete, deleting, breaking, onRequestDelete, onReq
           isVideo ? (
             <video className="h-full w-full object-cover" controls preload="metadata" playsInline src={src} />
           ) : (
-            <img className="h-full w-full object-cover" alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" src={src} />
+            isImage ? (
+              <AdminMediaImage key={String(item?.id || '')} assetId={item?.id} fallbackSrc={src} adminKey={mediaAdminKey} />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <svg className="h-12 w-12 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+            )
           )
         ) : (
           <div className="flex h-full items-center justify-center">
@@ -568,6 +627,7 @@ export function PublicMediaStorePage() {
                     canDelete={canDelete}
                     deleting={deleting && String(deletingId || '') === String(it?.id || '')}
                     breaking={breaking && String(breakingId || '') === String(it?.id || '')}
+                    mediaAdminKey={mediaAdminKey}
                     onRequestBreak={(target) => {
                       if (deleting || breaking) return
                       setConfirmMode('break')

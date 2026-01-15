@@ -80,6 +80,52 @@ export async function requestJson(path, { method = 'GET', token, query, body, he
   return json
 }
 
+export async function requestBlob(path, { method = 'GET', token, query, headers, signal } = {}) {
+  const url = new URL(path, API_BASE_URL)
+  if (query && typeof query === 'object') {
+    for (const [k, v] of Object.entries(query)) {
+      if (v == null || v === '') continue
+      url.searchParams.set(k, String(v))
+    }
+  }
+
+  let response
+  try {
+    const ngrokHeaders = API_BASE_URL.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : {}
+    response = await fetch(url.toString(), {
+      method,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...ngrokHeaders,
+        ...(headers || {}),
+      },
+      signal,
+    })
+  } catch (err) {
+    const aborted = err?.name === 'AbortError'
+    throw new HttpError(aborted ? 'Request cancelled' : 'Network error while calling API', {
+      status: 0,
+      code: aborted ? 'REQUEST_ABORTED' : 'NETWORK_ERROR',
+      details: { message: String(err?.message || err || '') },
+    })
+  }
+
+  if (!response.ok) {
+    let json = null
+    try {
+      json = await response.json()
+    } catch {
+      json = null
+    }
+    const message = json?.message || json?.error || response.statusText || 'Request failed'
+    const code = json?.code || json?.meta?.code || json?.error?.code || null
+    const details = json?.details || json?.meta?.details || json?.error?.details || json
+    throw new HttpError(message, { status: response.status, code, details })
+  }
+
+  return await response.blob()
+}
+
 export async function requestAuthedJson(path, { onUnauthorized, ...opts } = {}) {
   try {
     return await requestJson(path, opts)
