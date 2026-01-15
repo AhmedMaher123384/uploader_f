@@ -252,11 +252,19 @@ export function PublicMediaStorePage() {
     if (openingId || downloadingId || deleting || breaking) return
     setOpeningId(id)
     const controller = new AbortController()
-    const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
+    const w = window.open('about:blank', '_blank')
     try {
+      if (!w) {
+        toasts.error('المتصفح منع فتح تبويب جديد. اسمح بالـ Popups وجرب تاني.', 'غير مسموح')
+        return
+      }
+      try {
+        w.opener = null
+      } catch {
+        void 0
+      }
       const objUrl = await getAssetBlobUrl(id, mediaAdminKey, controller.signal)
-      if (w) w.location.href = objUrl
-      else window.location.href = objUrl
+      w.location.href = objUrl
     } catch (e) {
       if (w) {
         try {
