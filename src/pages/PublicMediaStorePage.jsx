@@ -73,159 +73,42 @@ function StoreLogo({ name, logoUrl }) {
 
 const mediaBlobUrlCache = new Map()
 
-function AdminMediaImage({ assetId, fallbackSrc, adminKey }) {
-  const id = String(assetId || '').trim()
-  const key = String(adminKey || '').trim()
-  const fallback = String(fallbackSrc || '')
-
-  const [blobUrl, setBlobUrl] = useState(() => {
-    if (id && mediaBlobUrlCache.has(id)) return mediaBlobUrlCache.get(id)
-    return ''
-  })
-
-  useEffect(() => {
-    let cancelled = false
-    if (!id || !key) return () => {}
-
-    if (mediaBlobUrlCache.has(id)) {
-      return () => {}
-    }
-
-    const controller = new AbortController()
-    ;(async () => {
-      try {
-        const blob = await requestBlob(`/api/public/media/assets/${encodeURIComponent(id)}/blob`, {
-          headers: { 'x-media-admin-key': key },
-          signal: controller.signal,
-        })
-        const objUrl = URL.createObjectURL(blob)
-        mediaBlobUrlCache.set(id, objUrl)
-        if (!cancelled) setBlobUrl(objUrl)
-      } catch {
-        void 0
+function cacheBlobUrl(id, url) {
+  const key = String(id || '').trim()
+  const u = String(url || '').trim()
+  if (!key || !u) return ''
+  const existing = mediaBlobUrlCache.get(key)
+  if (existing) return existing
+  mediaBlobUrlCache.set(key, u)
+  if (mediaBlobUrlCache.size > 200) {
+    const oldestKey = mediaBlobUrlCache.keys().next().value
+    if (oldestKey) {
+      const oldestUrl = mediaBlobUrlCache.get(oldestKey)
+      mediaBlobUrlCache.delete(oldestKey)
+      if (oldestUrl) {
+        try {
+          URL.revokeObjectURL(oldestUrl)
+        } catch {
+          void 0
+        }
       }
-    })()
-
-    return () => {
-      cancelled = true
-      controller.abort()
     }
-  }, [id, key])
-
-  return <img className="h-full w-full object-cover" alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" src={blobUrl || fallback} />
+  }
+  return u
 }
 
-function MediaCard({ item, canDelete, deleting, breaking, mediaAdminKey, onRequestDelete, onRequestBreak }) {
-  const rt = String(item?.resourceType || '')
-  const isVideo = rt === 'video'
-  const isImage = rt === 'image'
-  const src = item?.secureUrl || item?.url || null
-  const typeClasses = 'bg-transparent text-white border-[#18b5d5]/25'
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-[#18b5d5]/25 bg-[#292929]">
-      <div className="h-28 w-full bg-[#292929] sm:h-32">
-        {src ? (
-          isVideo ? (
-            <video className="h-full w-full object-cover" controls preload="metadata" playsInline src={src} />
-          ) : (
-            isImage ? (
-              <AdminMediaImage key={String(item?.id || '')} assetId={item?.id} fallbackSrc={src} adminKey={mediaAdminKey} />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <svg className="h-12 w-12 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-              </div>
-            )
-          )
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <svg className="h-12 w-12 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-bold text-white">{item?.originalFilename || item?.publicId || '—'}</div>
-            <div className="mt-1 truncate font-mono text-xs text-white opacity-90">{item?.publicId || '—'}</div>
-          </div>
-          <div className={['shrink-0 rounded-lg border px-2.5 py-1 text-xs font-semibold', typeClasses].join(' ')}>
-            {mediaLabel(item?.resourceType)}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg border border-[#18b5d5]/20 bg-[#292929] p-2.5">
-            <div className="text-[10px] font-bold text-[#18b5d5]">الحجم</div>
-            <div className="mt-1 text-xs font-bold text-white">{formatBytes(item?.bytes)}</div>
-          </div>
-          <div className="rounded-lg border border-[#18b5d5]/20 bg-[#292929] p-2.5">
-            <div className="text-[10px] font-bold text-[#18b5d5]">الأبعاد</div>
-            <div className="mt-1 text-xs font-bold text-white">
-              {item?.width && item?.height ? `${item.width}×${item.height}` : '—'}
-            </div>
-          </div>
-        </div>
-
-        {item?.duration != null && (
-          <div className="rounded-lg border border-[#18b5d5]/20 bg-[#292929] p-2.5">
-            <div className="text-[10px] font-bold text-[#18b5d5]">المدة</div>
-            <div className="mt-1 text-xs font-bold text-white">{Number(item.duration).toFixed(2)} ثانية</div>
-          </div>
-        )}
-
-        <div className="space-y-1.5 rounded-lg border border-[#18b5d5]/20 bg-[#292929] p-2.5 text-[11px] text-white">
-          <div className="flex items-center justify-between gap-2">
-            <span className="opacity-90">المجلد</span>
-            <span className="truncate font-mono">{item?.folder || '—'}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="opacity-90">تاريخ الرفع</span>
-            <span>{formatDate(item?.cloudinaryCreatedAt || item?.createdAt)}</span>
-          </div>
-          {src && (
-            <div className="flex items-center justify-between gap-2">
-              <span className="opacity-90">الرابط</span>
-              <a className="font-bold underline underline-offset-2" href={src} target="_blank" rel="noopener noreferrer">
-                فتح
-              </a>
-            </div>
-          )}
-        </div>
-
-        {canDelete ? (
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={deleting || breaking}
-              onClick={() => onRequestBreak && onRequestBreak(item)}
-              className="rounded-lg border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
-            >
-              {breaking ? 'جاري التعطيل...' : 'تعطيل الرابط'}
-            </button>
-            <button
-              type="button"
-              disabled={deleting || breaking}
-              onClick={() => onRequestDelete && onRequestDelete(item)}
-              className="rounded-lg bg-[#ef4444] px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
-            >
-              {deleting ? 'جاري الحذف...' : 'حذف'}
-            </button>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  )
+async function getAssetBlobUrl(assetId, adminKey, signal) {
+  const id = String(assetId || '').trim()
+  const key = String(adminKey || '').trim()
+  if (!id || !key) throw new Error('missing')
+  const cached = mediaBlobUrlCache.get(id)
+  if (cached) return cached
+  const blob = await requestBlob(`/api/public/media/assets/${encodeURIComponent(id)}/blob`, {
+    headers: { 'x-media-admin-key': key },
+    signal,
+  })
+  const objUrl = URL.createObjectURL(blob)
+  return cacheBlobUrl(id, objUrl)
 }
 
 export function PublicMediaStorePage() {
@@ -256,6 +139,8 @@ export function PublicMediaStorePage() {
   const [deletingId, setDeletingId] = useState('')
   const [breaking, setBreaking] = useState(false)
   const [breakingId, setBreakingId] = useState('')
+  const [openingId, setOpeningId] = useState('')
+  const [downloadingId, setDownloadingId] = useState('')
 
   useEffect(() => setResourceType(rtParam), [rtParam])
   useEffect(() => setQ(qParam), [qParam])
@@ -349,6 +234,79 @@ export function PublicMediaStorePage() {
     } finally {
       setBreaking(false)
       setBreakingId('')
+    }
+  }
+
+  async function openAsset(item) {
+    const id = String(item?.id || '').trim()
+    const fallback = String(item?.secureUrl || item?.url || '').trim()
+    if (!id || !mediaAdminKey) {
+      if (fallback) {
+        window.open(fallback, '_blank', 'noopener,noreferrer')
+      } else {
+        toasts.error('لا يوجد رابط متاح لهذا الملف.', 'خطأ')
+      }
+      return
+    }
+
+    if (openingId || downloadingId || deleting || breaking) return
+    setOpeningId(id)
+    const controller = new AbortController()
+    const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
+    try {
+      const objUrl = await getAssetBlobUrl(id, mediaAdminKey, controller.signal)
+      if (w) w.location.href = objUrl
+      else window.location.href = objUrl
+    } catch (e) {
+      if (w) {
+        try {
+          w.close()
+        } catch {
+          void 0
+        }
+      }
+      toasts.error(String(e?.message || 'فشل فتح الملف.'), 'خطأ')
+    } finally {
+      setOpeningId('')
+    }
+  }
+
+  async function downloadAsset(item) {
+    const id = String(item?.id || '').trim()
+    const fallback = String(item?.secureUrl || item?.url || '').trim()
+    const filename = String(item?.originalFilename || item?.publicId || 'file').trim() || 'file'
+
+    if (!id || !mediaAdminKey) {
+      if (fallback) {
+        const a = document.createElement('a')
+        a.href = fallback
+        a.target = '_blank'
+        a.rel = 'noopener noreferrer'
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+      } else {
+        toasts.error('لا يوجد رابط متاح لهذا الملف.', 'خطأ')
+      }
+      return
+    }
+
+    if (openingId || downloadingId || deleting || breaking) return
+    setDownloadingId(id)
+    const controller = new AbortController()
+    try {
+      const objUrl = await getAssetBlobUrl(id, mediaAdminKey, controller.signal)
+      const a = document.createElement('a')
+      a.href = objUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+    } catch (e) {
+      toasts.error(String(e?.message || 'فشل تحميل الملف.'), 'خطأ')
+    } finally {
+      setDownloadingId('')
     }
   }
 
@@ -619,29 +577,102 @@ export function PublicMediaStorePage() {
 
           {!loading && !error ? (
             items.length ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                {items.map((it) => (
-                  <MediaCard
-                    key={String(it?.id)}
-                    item={it}
-                    canDelete={canDelete}
-                    deleting={deleting && String(deletingId || '') === String(it?.id || '')}
-                    breaking={breaking && String(breakingId || '') === String(it?.id || '')}
-                    mediaAdminKey={mediaAdminKey}
-                    onRequestBreak={(target) => {
-                      if (deleting || breaking) return
-                      setConfirmMode('break')
-                      setConfirmTarget(target)
-                      setConfirmOpen(true)
-                    }}
-                    onRequestDelete={(target) => {
-                      if (deleting || breaking) return
-                      setConfirmMode('delete')
-                      setConfirmTarget(target)
-                      setConfirmOpen(true)
-                    }}
-                  />
-                ))}
+              <div className="overflow-x-auto rounded-xl border border-[#18b5d5]/25 bg-[#292929]">
+                <table className="w-full min-w-[980px] text-sm text-white">
+                  <thead>
+                    <tr className="text-right">
+                      <th className="px-5 py-4 text-xs font-extrabold text-white">الاسم</th>
+                      <th className="px-5 py-4 text-xs font-extrabold text-white">النوع</th>
+                      <th className="px-5 py-4 text-xs font-extrabold text-white">الحجم</th>
+                      <th className="px-5 py-4 text-xs font-extrabold text-white">تفاصيل</th>
+                      <th className="px-5 py-4 text-xs font-extrabold text-white">المجلد</th>
+                      <th className="px-5 py-4 text-xs font-extrabold text-white">تاريخ الرفع</th>
+                      <th className="px-5 py-4 text-xs font-extrabold text-white">إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((it) => {
+                      const id = String(it?.id || '').trim()
+                      const rt = String(it?.resourceType || '')
+                      const details = rt === 'video'
+                        ? (it?.duration != null ? `${Number(it.duration).toFixed(2)} ثانية` : '—')
+                        : it?.width && it?.height
+                          ? `${it.width}×${it.height}`
+                          : '—'
+                      const rowDeleting = deleting && String(deletingId || '') === id
+                      const rowBreaking = breaking && String(breakingId || '') === id
+                      const rowOpening = openingId && openingId === id
+                      const rowDownloading = downloadingId && downloadingId === id
+                      return (
+                        <tr key={id || String(it?.publicId || '')} className="border-t border-[#18b5d5]/10 align-top">
+                          <td className="px-5 py-4">
+                            <div className="max-w-[360px] truncate font-extrabold">{String(it?.originalFilename || it?.publicId || '—')}</div>
+                            {it?.publicId ? <div className="mt-1 max-w-[360px] truncate font-mono text-xs opacity-90">{String(it.publicId)}</div> : null}
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="inline-flex items-center rounded-lg border border-[#18b5d5]/25 bg-transparent px-2.5 py-1 text-xs font-extrabold text-white">
+                              {mediaLabel(rt)}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 font-extrabold">{formatBytes(it?.bytes)}</td>
+                          <td className="px-5 py-4 font-extrabold">{details}</td>
+                          <td className="px-5 py-4">
+                            <div className="max-w-[220px] truncate font-mono text-xs opacity-90">{String(it?.folder || '—')}</div>
+                          </td>
+                          <td className="px-5 py-4 font-extrabold">{formatDate(it?.cloudinaryCreatedAt || it?.createdAt)}</td>
+                          <td className="px-5 py-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                disabled={Boolean(rowOpening || rowDownloading || rowDeleting || rowBreaking)}
+                                onClick={() => openAsset(it)}
+                                className="rounded-lg border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
+                              >
+                                {rowOpening ? 'جاري الفتح...' : 'فتح'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={Boolean(rowOpening || rowDownloading || rowDeleting || rowBreaking)}
+                                onClick={() => downloadAsset(it)}
+                                className="rounded-lg border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
+                              >
+                                {rowDownloading ? 'جاري التحميل...' : 'تحميل'}
+                              </button>
+                              {canDelete ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={Boolean(rowOpening || rowDownloading || rowDeleting || rowBreaking)}
+                                    onClick={() => {
+                                      setConfirmMode('break')
+                                      setConfirmTarget(it)
+                                      setConfirmOpen(true)
+                                    }}
+                                    className="rounded-lg border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
+                                  >
+                                    {rowBreaking ? 'جاري التعطيل...' : 'تعطيل الرابط'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={Boolean(rowOpening || rowDownloading || rowDeleting || rowBreaking)}
+                                    onClick={() => {
+                                      setConfirmMode('delete')
+                                      setConfirmTarget(it)
+                                      setConfirmOpen(true)
+                                    }}
+                                    className="rounded-lg bg-[#ef4444] px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
+                                  >
+                                    {rowDeleting ? 'جاري الحذف...' : 'حذف'}
+                                  </button>
+                                </>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div className="rounded-xl border border-[#18b5d5]/25 bg-[#292929] p-12 text-center text-white">

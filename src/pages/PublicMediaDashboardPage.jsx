@@ -1,7 +1,48 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loading } from '../components/ui/Loading.jsx'
-import { requestJson } from '../lib/http.js'
+import { useToasts } from '../components/useToasts.js'
+import { requestBlob, requestJson } from '../lib/http.js'
+
+const mediaBlobUrlCache = new Map()
+
+function cacheBlobUrl(id, url) {
+  const key = String(id || '').trim()
+  const u = String(url || '').trim()
+  if (!key || !u) return ''
+  const existing = mediaBlobUrlCache.get(key)
+  if (existing) return existing
+  mediaBlobUrlCache.set(key, u)
+  if (mediaBlobUrlCache.size > 100) {
+    const oldestKey = mediaBlobUrlCache.keys().next().value
+    if (oldestKey) {
+      const oldestUrl = mediaBlobUrlCache.get(oldestKey)
+      mediaBlobUrlCache.delete(oldestKey)
+      if (oldestUrl) {
+        try {
+          URL.revokeObjectURL(oldestUrl)
+        } catch {
+          void 0
+        }
+      }
+    }
+  }
+  return u
+}
+
+async function getAssetBlobUrl(assetId, adminKey, signal) {
+  const id = String(assetId || '').trim()
+  const key = String(adminKey || '').trim()
+  if (!id || !key) throw new Error('missing')
+  const cached = mediaBlobUrlCache.get(id)
+  if (cached) return cached
+  const blob = await requestBlob(`/api/public/media/assets/${encodeURIComponent(id)}/blob`, {
+    headers: { 'x-media-admin-key': key },
+    signal,
+  })
+  const objUrl = URL.createObjectURL(blob)
+  return cacheBlobUrl(id, objUrl)
+}
 
 function formatDate(v) {
   if (!v) return '—'
@@ -232,6 +273,7 @@ function SectionHeader({ title, subtitle, to, actionLabel }) {
 export function PublicMediaDashboardPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const toasts = useToasts()
   const [searchParams, setSearchParams] = useSearchParams()
   const viewParam = String(searchParams.get('view') || '').trim()
   const isStoresPath = String(location?.pathname || '') === '/stores'
@@ -252,6 +294,9 @@ export function PublicMediaDashboardPage() {
   const [overviewLoading, setOverviewLoading] = useState(true)
   const [overviewError, setOverviewError] = useState('')
   const [overview, setOverview] = useState(null)
+  const [openingId, setOpeningId] = useState('')
+
+  const mediaAdminKey = String(import.meta.env.VITE_MEDIA_ADMIN_KEY || '').trim()
 
   useEffect(() => {
     setQ(qParam)
@@ -264,6 +309,36 @@ export function PublicMediaDashboardPage() {
   useEffect(() => {
     setSort(sortParam)
   }, [sortParam])
+
+  async function openAsset(a) {
+    const id = String(a?.id || '').trim()
+    const fallback = String(a?.secureUrl || a?.url || '').trim()
+    if (!id || !mediaAdminKey) {
+      if (fallback) window.open(fallback, '_blank', 'noopener,noreferrer')
+      else toasts.error('لا يوجد رابط متاح لهذا الملف.', 'خطأ')
+      return
+    }
+    if (openingId) return
+    setOpeningId(id)
+    const controller = new AbortController()
+    const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
+    try {
+      const objUrl = await getAssetBlobUrl(id, mediaAdminKey, controller.signal)
+      if (w) w.location.href = objUrl
+      else window.location.href = objUrl
+    } catch (e) {
+      if (w) {
+        try {
+          w.close()
+        } catch {
+          void 0
+        }
+      }
+      toasts.error(String(e?.message || 'فشل فتح الملف.'), 'خطأ')
+    } finally {
+      setOpeningId('')
+    }
+  }
 
   useEffect(() => {
     const t = globalThis.setTimeout(() => {
@@ -464,6 +539,7 @@ export function PublicMediaDashboardPage() {
                             const type = String(a?.resourceType || '')
                             const name = String(a?.originalFilename || a?.publicId || '—')
                             const href = String(a?.secureUrl || a?.url || '').trim()
+                            const rowOpening = Boolean(openingId && String(openingId) === String(a?.id || ''))
                             return (
                               <tr key={String(a?.id || a?.publicId || `${storeId}:${name}:${at}`)} className="border-t border-[#18b5d5]/10">
                                 <td className="px-5 py-3">{formatDate(at)}</td>
@@ -486,13 +562,14 @@ export function PublicMediaDashboardPage() {
                                   {a?.publicId ? <div className="mt-1 max-w-[340px] truncate text-xs opacity-90">{String(a.publicId)}</div> : null}
                                 </td>
                                 <td className="px-5 py-3">
-                                  {href ? (
-                                    <a className="font-bold text-white underline-offset-2 hover:underline" href={href} target="_blank" rel="noopener noreferrer">
-                                      فتح
-                                    </a>
-                                  ) : (
-                                    '—'
-                                  )}
+                                  <button
+                                    type="button"
+                                    disabled={!href && !a?.id}
+                                    onClick={() => openAsset(a)}
+                                    className="font-bold text-white underline-offset-2 hover:underline disabled:opacity-40"
+                                  >
+                                    {rowOpening ? 'جاري الفتح...' : 'فتح'}
+                                  </button>
                                 </td>
                               </tr>
                             )
