@@ -314,11 +314,16 @@ export function PublicMediaDashboardPage() {
     const id = String(a?.id || '').trim()
     const fallback = String(a?.secureUrl || a?.url || '').trim()
     if (!id || !mediaAdminKey) {
-      if (fallback) window.open(fallback, '_blank', 'noopener,noreferrer')
-      else toasts.error('لا يوجد رابط متاح لهذا الملف.', 'خطأ')
+      if (fallback) {
+        window.open(fallback, '_blank', 'noopener,noreferrer')
+        toasts.success('تم فتح الملف.', 'تم')
+      } else {
+        toasts.error('لا يوجد رابط متاح لهذا الملف.', 'خطأ')
+      }
       return
     }
     if (openingId) return
+    toasts.info('جاري فتح الملف...', 'لحظة')
     setOpeningId(id)
     const controller = new AbortController()
     const w = window.open('about:blank', '_blank')
@@ -334,6 +339,7 @@ export function PublicMediaDashboardPage() {
       }
       const objUrl = await getAssetBlobUrl(id, mediaAdminKey, controller.signal)
       w.location.href = objUrl
+      toasts.success('تم فتح الملف.', 'تم')
     } catch (e) {
       if (w) {
         try {
@@ -342,7 +348,7 @@ export function PublicMediaDashboardPage() {
           void 0
         }
       }
-      toasts.error(String(e?.message || 'فشل فتح الملف.'), 'خطأ')
+      await toasts.apiError(e, 'خطأ')
     } finally {
       setOpeningId('')
     }
@@ -392,7 +398,9 @@ export function PublicMediaDashboardPage() {
         setData({ total: Number(res?.total || 0) || 0, stores: Array.isArray(res?.stores) ? res.stores : [] })
       } catch (e) {
         if (e?.code === 'REQUEST_ABORTED') return
-        setError(String(e?.message || 'Failed to load stores.'))
+        const msg = String(e?.message || 'فشل تحميل المتاجر.')
+        setError(msg)
+        toasts.error(msg, 'خطأ')
         setData({ total: 0, stores: [] })
       } finally {
         if (!controller.signal.aborted) setLoading(false)
@@ -400,7 +408,7 @@ export function PublicMediaDashboardPage() {
     }
     run()
     return () => controller.abort()
-  }, [limit, page, q, sort, view])
+  }, [limit, page, q, sort, toasts, view])
 
   useEffect(() => {
     if (view !== 'overview') return undefined
@@ -413,7 +421,9 @@ export function PublicMediaDashboardPage() {
         setOverview(res || null)
       } catch (e) {
         if (e?.code === 'REQUEST_ABORTED') return
-        setOverviewError(String(e?.message || 'Failed to load overview.'))
+        const msg = String(e?.message || 'فشل تحميل النظرة العامة.')
+        setOverviewError(msg)
+        toasts.error(msg, 'خطأ')
         setOverview(null)
       } finally {
         if (!controller.signal.aborted) setOverviewLoading(false)
@@ -421,7 +431,7 @@ export function PublicMediaDashboardPage() {
     }
     run()
     return () => controller.abort()
-  }, [view])
+  }, [toasts, view])
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil((Number(data.total || 0) || 0) / limit)), [data.total, limit])
   const stores = Array.isArray(data.stores) ? data.stores : []

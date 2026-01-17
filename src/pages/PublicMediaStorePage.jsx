@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx'
 import { Loading } from '../components/ui/Loading.jsx'
 import { useToasts } from '../components/useToasts.js'
 import { requestBlob, requestJson } from '../lib/http.js'
@@ -132,9 +131,6 @@ export function PublicMediaStorePage() {
 
   const mediaAdminKey = String(import.meta.env.VITE_MEDIA_ADMIN_KEY || '').trim()
   const canDelete = Boolean(mediaAdminKey)
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const [confirmMode, setConfirmMode] = useState('delete')
-  const [confirmTarget, setConfirmTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
   const [breaking, setBreaking] = useState(false)
@@ -188,7 +184,9 @@ export function PublicMediaStorePage() {
         })
       } catch (e) {
         if (e?.code === 'REQUEST_ABORTED') return
-        setError(String(e?.message || 'Failed to load assets.'))
+        const msg = String(e?.message || 'فشل تحميل الملفات.')
+        setError(msg)
+        toasts.error(msg, 'خطأ')
         setData({ total: 0, items: [], store: null, summary: null })
       } finally {
         if (!controller.signal.aborted) setLoading(false)
@@ -196,7 +194,7 @@ export function PublicMediaStorePage() {
     }
     run()
     return () => controller.abort()
-  }, [limit, page, q, refresh, resourceType, storeId])
+  }, [limit, page, q, refresh, resourceType, storeId, toasts])
 
   async function deleteAssetById(assetId) {
     if (!assetId) return
@@ -214,7 +212,7 @@ export function PublicMediaStorePage() {
       toasts.success('تم حذف الملف بنجاح.', 'تم')
       setRefresh((x) => x + 1)
     } catch (e) {
-      toasts.error(String(e?.message || 'فشل حذف الملف.'), 'خطأ')
+      await toasts.apiError(e, 'خطأ')
     } finally {
       setDeleting(false)
       setDeletingId('')
@@ -237,12 +235,40 @@ export function PublicMediaStorePage() {
     }
   }
 
+  async function confirmAndRun(mode, item) {
+    if (openingId || downloadingId || deleting || breaking) return
+    const id = String(item?.id || '').trim()
+    if (!id) return
+    if (!canDelete) {
+      toasts.error('ميزة الحذف غير مفعّلة على هذا الداشبورد.', 'غير متاح')
+      return
+    }
+
+    const action = String(mode || '')
+    const isBreak = action === 'break'
+
+    const ok = await toasts.confirmDanger({
+      title: isBreak ? 'تأكيد تعطيل الرابط' : 'تأكيد الحذف',
+      message: isBreak
+        ? `هل تريد تعطيل رابط هذا الملف؟ (اللينك القديم هيتكسر)${item?.publicId ? ` (${String(item.publicId)})` : ''}`
+        : `هل أنت متأكد أنك تريد حذف هذا الملف من Cloudinary؟${item?.publicId ? ` (${String(item.publicId)})` : ''}`,
+      confirmText: isBreak ? 'تعطيل' : 'حذف',
+      cancelText: 'إلغاء',
+    })
+    if (!ok) return
+
+    toasts.info(isBreak ? 'جاري تعطيل الرابط...' : 'جاري حذف الملف...', 'لحظة')
+    if (isBreak) await breakAssetLinkById(id)
+    else await deleteAssetById(id)
+  }
+
   async function openAsset(item) {
     const id = String(item?.id || '').trim()
     const fallback = String(item?.secureUrl || item?.url || '').trim()
     if (!id || !mediaAdminKey) {
       if (fallback) {
         window.open(fallback, '_blank', 'noopener,noreferrer')
+        toasts.success('تم فتح الملف.', 'تم')
       } else {
         toasts.error('لا يوجد رابط متاح لهذا الملف.', 'خطأ')
       }
@@ -250,6 +276,7 @@ export function PublicMediaStorePage() {
     }
 
     if (openingId || downloadingId || deleting || breaking) return
+    toasts.info('جاري فتح الملف...', 'لحظة')
     setOpeningId(id)
     const controller = new AbortController()
     const w = window.open('about:blank', '_blank')
@@ -265,6 +292,7 @@ export function PublicMediaStorePage() {
       }
       const objUrl = await getAssetBlobUrl(id, mediaAdminKey, controller.signal)
       w.location.href = objUrl
+      toasts.success('تم فتح الملف.', 'تم')
     } catch (e) {
       if (w) {
         try {
@@ -273,7 +301,7 @@ export function PublicMediaStorePage() {
           void 0
         }
       }
-      toasts.error(String(e?.message || 'فشل فتح الملف.'), 'خطأ')
+      await toasts.apiError(e, 'خطأ')
     } finally {
       setOpeningId('')
     }
@@ -294,6 +322,7 @@ export function PublicMediaStorePage() {
         document.body.appendChild(a)
         a.click()
         a.remove()
+        toasts.success('تم بدء التحميل.', 'تم')
       } else {
         toasts.error('لا يوجد رابط متاح لهذا الملف.', 'خطأ')
       }
@@ -301,6 +330,7 @@ export function PublicMediaStorePage() {
     }
 
     if (openingId || downloadingId || deleting || breaking) return
+    toasts.info('جاري تجهيز التحميل...', 'لحظة')
     setDownloadingId(id)
     const controller = new AbortController()
     try {
@@ -311,8 +341,9 @@ export function PublicMediaStorePage() {
       document.body.appendChild(a)
       a.click()
       a.remove()
+      toasts.success('تم بدء التحميل.', 'تم')
     } catch (e) {
-      toasts.error(String(e?.message || 'فشل تحميل الملف.'), 'خطأ')
+      await toasts.apiError(e, 'خطأ')
     } finally {
       setDownloadingId('')
     }
@@ -542,32 +573,6 @@ export function PublicMediaStorePage() {
         </div>
 
         <div className="mt-6">
-          <ConfirmDialog
-            open={confirmOpen}
-            title={confirmMode === 'break' ? 'تأكيد تعطيل الرابط' : 'تأكيد الحذف'}
-            message={
-              confirmMode === 'break'
-                ? `هل تريد تعطيل رابط هذا الملف؟ (اللينك القديم هيتكسر)${confirmTarget?.publicId ? ` (${String(confirmTarget.publicId)})` : ''}`
-                : `هل أنت متأكد أنك تريد حذف هذا الملف من Cloudinary؟${confirmTarget?.publicId ? ` (${String(confirmTarget.publicId)})` : ''}`
-            }
-            confirmText={confirmMode === 'break' ? 'تعطيل' : 'حذف'}
-            cancelText="إلغاء"
-            onCancel={() => {
-              if (deleting || breaking) return
-              setConfirmOpen(false)
-              setConfirmTarget(null)
-            }}
-            onConfirm={async () => {
-              if (deleting || breaking) return
-              const id = String(confirmTarget?.id || '').trim()
-              const mode = String(confirmMode)
-              setConfirmOpen(false)
-              setConfirmTarget(null)
-              if (mode === 'break') await breakAssetLinkById(id)
-              else await deleteAssetById(id)
-            }}
-          />
-
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loading label="جاري تحميل الملفات..." />
@@ -651,11 +656,7 @@ export function PublicMediaStorePage() {
                                   <button
                                     type="button"
                                     disabled={Boolean(rowOpening || rowDownloading || rowDeleting || rowBreaking)}
-                                    onClick={() => {
-                                      setConfirmMode('break')
-                                      setConfirmTarget(it)
-                                      setConfirmOpen(true)
-                                    }}
+                                    onClick={() => confirmAndRun('break', it)}
                                     className="rounded-lg border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
                                   >
                                     {rowBreaking ? 'جاري التعطيل...' : 'تعطيل الرابط'}
@@ -663,11 +664,7 @@ export function PublicMediaStorePage() {
                                   <button
                                     type="button"
                                     disabled={Boolean(rowOpening || rowDownloading || rowDeleting || rowBreaking)}
-                                    onClick={() => {
-                                      setConfirmMode('delete')
-                                      setConfirmTarget(it)
-                                      setConfirmOpen(true)
-                                    }}
+                                    onClick={() => confirmAndRun('delete', it)}
                                     className="rounded-lg bg-[#ef4444] px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
                                   >
                                     {rowDeleting ? 'جاري الحذف...' : 'حذف'}
