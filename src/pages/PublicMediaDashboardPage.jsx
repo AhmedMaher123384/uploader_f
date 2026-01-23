@@ -231,10 +231,10 @@ function MetricCard({ label, value, hint, tone = 'sky', to }) {
   void tone
 
   const inner = (
-    <div className="rounded-2xl border border-[#18b5d5]/25 bg-[#242424] p-5">
+    <div className="rounded-2xl border border-[#18b5d5]/25 bg-[#242424] p-4 sm:p-5">
       <div className="text-xs font-bold tracking-wide text-[#18b5d5]">{label}</div>
       <div className="mt-2 flex items-baseline justify-between gap-3">
-        <div className="text-3xl font-extrabold text-white">{value}</div>
+        <div className="text-2xl font-extrabold text-white sm:text-3xl">{value}</div>
       </div>
       {hint ? <div className="mt-2 text-xs text-white opacity-90">{hint}</div> : null}
     </div>
@@ -442,14 +442,14 @@ export function PublicMediaDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#292929]" dir="rtl">
-      <div className="mx-auto w-full max-w-7xl px-4 py-10">
-        <div className="rounded-3xl border border-[#18b5d5]/25 bg-[#242424] p-7">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">
+        <div className="rounded-3xl border border-[#18b5d5]/25 bg-[#242424] p-4 sm:p-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 text-right">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#18b5d5]/25 bg-[#292929] px-3 py-1 text-xs font-bold text-[#18b5d5]">
                  <span className="opacity-70">•</span> Media
               </div>
-              <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-[#18b5d5] sm:text-4xl">منصة الرفع</h1>
+              <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-[#18b5d5] sm:text-4xl">منصة الرفع</h1>
               <p className="mt-2 text-sm text-white opacity-90">إدارة الميديا حسب المتجر — لوحة رسمية، سريعة، ومنظمة.</p>
             </div>
 
@@ -460,7 +460,7 @@ export function PublicMediaDashboardPage() {
                   navigate({ pathname: '/', search: '' })
                 }}
                 className={[
-                  'rounded-xl px-4 py-2 text-sm font-extrabold',
+                  'rounded-xl px-3 py-1.5 text-xs font-extrabold sm:px-4 sm:py-2 sm:text-sm',
                   view === 'overview' ? 'bg-[#18b5d5] text-white' : 'border border-[#18b5d5]/25 bg-transparent text-white'
                 ].join(' ')}
               >
@@ -472,7 +472,7 @@ export function PublicMediaDashboardPage() {
                   navigate({ pathname: '/stores', search: String(searchParams || '') ? `?${searchParams.toString()}` : '' })
                 }}
                 className={[
-                  'rounded-xl px-4 py-2 text-sm font-extrabold',
+                  'rounded-xl px-3 py-1.5 text-xs font-extrabold sm:px-4 sm:py-2 sm:text-sm',
                   view === 'stores' ? 'bg-[#18b5d5] text-white' : 'border border-[#18b5d5]/25 bg-transparent text-white'
                 ].join(' ')}
               >
@@ -491,7 +491,7 @@ export function PublicMediaDashboardPage() {
             ) : null}
 
             {!overviewLoading && overviewError ? (
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-6 text-center">
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-center sm:p-6">
                 <div className="text-sm font-semibold text-red-300">{overviewError}</div>
               </div>
             ) : null}

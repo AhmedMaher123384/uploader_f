@@ -363,17 +363,17 @@ export function PublicMediaStorePage() {
 
   return (
     <div className="min-h-screen bg-[#292929]" dir="rtl">
-      <div className="mx-auto w-full max-w-7xl px-4 py-8">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-8">
         <div className="overflow-hidden rounded-2xl border border-[#18b5d5]/25 bg-[#292929]">
-          <div className="px-6 py-7">
+          <div className="px-4 py-5 sm:px-6 sm:py-7">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-5">
                 <StoreLogo name={storeName} logoUrl={storeLogoUrl} />
                 
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-[#18b5d5]">منصة الرفع</div>
-                  <h1 className="mt-2 text-2xl font-extrabold text-white">{storeName}</h1>
-                  <p className="mt-2 font-mono text-sm text-white opacity-90">{storeId}</p>
+                  <h1 className="mt-2 text-xl font-extrabold text-white sm:text-2xl">{storeName}</h1>
+                  <p className="mt-2 font-mono text-xs text-white opacity-90 sm:text-sm">{storeId}</p>
                   
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     {storeDomain && (
@@ -415,13 +415,13 @@ export function PublicMediaStorePage() {
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <Link
                   to="/stores"
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2.5 text-sm font-extrabold text-white"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white sm:px-4 sm:py-2.5 sm:text-sm"
                 >
                   المتاجر
                 </Link>
                 <Link
                   to="/"
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-4 py-2.5 text-sm font-extrabold text-white"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white sm:px-4 sm:py-2.5 sm:text-sm"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -432,7 +432,7 @@ export function PublicMediaStorePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 border-t border-[#18b5d5]/15 p-6 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 border-t border-[#18b5d5]/15 p-4 sm:grid-cols-4 sm:gap-4 sm:p-6">
             <div className="rounded-xl border border-[#18b5d5]/25 bg-[#292929] p-4">
               <div className="flex items-center gap-2">
                 <div className="grid h-8 w-8 place-items-center rounded-lg border border-[#18b5d5]/25 bg-transparent">
@@ -442,7 +442,7 @@ export function PublicMediaStorePage() {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-[#18b5d5]">إجمالي الملفات</div>
-                  <div className="text-xl font-extrabold text-white">{summaryTotal.toLocaleString()}</div>
+                  <div className="text-lg font-extrabold text-white sm:text-xl">{summaryTotal.toLocaleString()}</div>
                 </div>
               </div>
             </div>
@@ -456,7 +456,7 @@ export function PublicMediaStorePage() {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-[#18b5d5]">الصور</div>
-                  <div className="text-xl font-extrabold text-white">{summaryImages.toLocaleString()}</div>
+                  <div className="text-lg font-extrabold text-white sm:text-xl">{summaryImages.toLocaleString()}</div>
                 </div>
               </div>
             </div>
@@ -491,7 +491,7 @@ export function PublicMediaStorePage() {
           </div>
         </div>
 
-        <div className="mt-6 rounded-xl border border-[#18b5d5]/25 bg-[#292929] p-4">
+        <div className="mt-5 rounded-xl border border-[#18b5d5]/25 bg-[#292929] p-4 sm:mt-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <select
               value={resourceType}
@@ -557,7 +557,7 @@ export function PublicMediaStorePage() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="rounded-lg border border-[#18b5d5]/25 bg-transparent px-4 py-2 text-sm font-extrabold text-white disabled:opacity-40"
+              className="rounded-lg border border-[#18b5d5]/25 bg-transparent px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40 sm:px-4 sm:text-sm"
             >
               السابق
             </button>
@@ -565,7 +565,7 @@ export function PublicMediaStorePage() {
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg bg-[#18b5d5] px-4 py-2 text-sm font-extrabold text-white disabled:opacity-40"
+              className="rounded-lg bg-[#18b5d5] px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40 sm:px-4 sm:text-sm"
             >
               التالي
             </button>
@@ -580,7 +580,7 @@ export function PublicMediaStorePage() {
           ) : null}
 
           {!loading && error ? (
-            <div className="rounded-xl border border-[#18b5d5]/25 bg-[#292929] p-6 text-center text-white">
+            <div className="rounded-xl border border-[#18b5d5]/25 bg-[#292929] p-4 text-center text-white sm:p-6">
               <svg className="mx-auto mb-3 h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -594,13 +594,13 @@ export function PublicMediaStorePage() {
                 <table className="w-full min-w-[980px] text-sm text-white">
                   <thead>
                     <tr className="text-right">
-                      <th className="px-5 py-4 text-xs font-extrabold text-white">الاسم</th>
-                      <th className="px-5 py-4 text-xs font-extrabold text-white">النوع</th>
-                      <th className="px-5 py-4 text-xs font-extrabold text-white">الحجم</th>
-                      <th className="px-5 py-4 text-xs font-extrabold text-white">تفاصيل</th>
-                      <th className="px-5 py-4 text-xs font-extrabold text-white">المجلد</th>
-                      <th className="px-5 py-4 text-xs font-extrabold text-white">تاريخ الرفع</th>
-                      <th className="px-5 py-4 text-xs font-extrabold text-white">إجراءات</th>
+                      <th className="px-4 py-3 text-xs font-extrabold text-white sm:px-5 sm:py-4">الاسم</th>
+                      <th className="px-4 py-3 text-xs font-extrabold text-white sm:px-5 sm:py-4">النوع</th>
+                      <th className="px-4 py-3 text-xs font-extrabold text-white sm:px-5 sm:py-4">الحجم</th>
+                      <th className="px-4 py-3 text-xs font-extrabold text-white sm:px-5 sm:py-4">تفاصيل</th>
+                      <th className="px-4 py-3 text-xs font-extrabold text-white sm:px-5 sm:py-4">المجلد</th>
+                      <th className="px-4 py-3 text-xs font-extrabold text-white sm:px-5 sm:py-4">تاريخ الرفع</th>
+                      <th className="px-4 py-3 text-xs font-extrabold text-white sm:px-5 sm:py-4">إجراءات</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -618,22 +618,22 @@ export function PublicMediaStorePage() {
                       const rowDownloading = downloadingId && downloadingId === id
                       return (
                         <tr key={id || String(it?.publicId || '')} className="border-t border-[#18b5d5]/10 align-top">
-                          <td className="px-5 py-4">
+                          <td className="px-4 py-3 sm:px-5 sm:py-4">
                             <div className="max-w-[360px] truncate font-extrabold">{String(it?.originalFilename || it?.publicId || '—')}</div>
                             {it?.publicId ? <div className="mt-1 max-w-[360px] truncate font-mono text-xs opacity-90">{String(it.publicId)}</div> : null}
                           </td>
-                          <td className="px-5 py-4">
+                          <td className="px-4 py-3 sm:px-5 sm:py-4">
                             <span className="inline-flex items-center rounded-lg border border-[#18b5d5]/25 bg-transparent px-2.5 py-1 text-xs font-extrabold text-white">
                               {mediaLabel(rt)}
                             </span>
                           </td>
-                          <td className="px-5 py-4 font-extrabold">{formatBytes(it?.bytes)}</td>
-                          <td className="px-5 py-4 font-extrabold">{details}</td>
-                          <td className="px-5 py-4">
+                          <td className="px-4 py-3 font-extrabold sm:px-5 sm:py-4">{formatBytes(it?.bytes)}</td>
+                          <td className="px-4 py-3 font-extrabold sm:px-5 sm:py-4">{details}</td>
+                          <td className="px-4 py-3 sm:px-5 sm:py-4">
                             <div className="max-w-[220px] truncate font-mono text-xs opacity-90">{String(it?.folder || '—')}</div>
                           </td>
-                          <td className="px-5 py-4 font-extrabold">{formatDate(it?.cloudinaryCreatedAt || it?.createdAt)}</td>
-                          <td className="px-5 py-4">
+                          <td className="px-4 py-3 font-extrabold sm:px-5 sm:py-4">{formatDate(it?.cloudinaryCreatedAt || it?.createdAt)}</td>
+                          <td className="px-4 py-3 sm:px-5 sm:py-4">
                             <div className="flex flex-wrap items-center gap-2">
                               <button
                                 type="button"
@@ -680,7 +680,7 @@ export function PublicMediaStorePage() {
                 </table>
               </div>
             ) : (
-              <div className="rounded-xl border border-[#18b5d5]/25 bg-[#292929] p-12 text-center text-white">
+              <div className="rounded-xl border border-[#18b5d5]/25 bg-[#292929] p-6 text-center text-white sm:p-12">
                 <svg className="mx-auto mb-4 h-16 w-16 text-white opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
